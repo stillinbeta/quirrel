@@ -1,13 +1,6 @@
 -module(quirrel_parse_frame).
 
--record(packet_header, {connection_id   :: integer() | undefined
-                       ,connection_bits :: integer()
-                       ,quic_version    :: quic_version()  | undefined
-                       ,packet_number   :: integer() | undefined
-                       }).
--type packet_type() :: regular | reset | version.
--type packet() :: binary().
--type quic_version() :: <<_:32>>.
+-include("src/quirrel.hrl").
 
 -export([parse_headers/2, parse_packet/3]).
 
@@ -38,24 +31,26 @@ parse_headers(PacketWithHeaders, ServerOrClient) ->
                {_, 1, client} -> regular
              end,
 
+  io:format("bit_size() -> ~p~n", [bit_size(Rest)]),
   case {Type, Rest} of
       %% For version packet, version is part of packet "body"
-      {version,
+    {version,
        <<ConnectionId:ConnectionIdSize/little-integer, Packet/binary>>} ->
         {ok, #packet_header{connection_id = ConnectionId
                            ,connection_bits = ConnectionIdSize
                            ,quic_version = undefined
                            ,packet_number = undefined
                            }, Type, Packet};
-    {_, <<ConnectionId:ConnectionIdSize/little-integer,
-        Version:VersionSize/binary,
-        PacketNumber:PacketNumberSize/integer,
-        Packet/binary>>} ->
+    {_, <<ConnectionId:ConnectionIdSize/little-integer
+         ,Version:VersionSize/binary
+         ,PacketNumber:PacketNumberSize/integer
+         ,Packet/binary
+        >>} ->
             {ok, #packet_header{connection_id = case ConnectionIdPresent of
                                     true  -> ConnectionId;
                                     false -> undefined
                                   end
-                               ,connection_bits = ConnectionIdBytes
+                               ,connection_bits = ConnectionIdSize
                                ,quic_version = case VersionPresent of
                                                  true  -> Version;
                                                  false -> undefined

@@ -1,5 +1,7 @@
 -module(quirrel_server).
 
+-include("src/quirrel.hrl").
+
 -export([start/0, loop/1]).
 
 start() ->
@@ -17,7 +19,8 @@ loop(Socket) ->
     {udp, _Socket, _Host, _Port, Bin} ->
       %% io:format("server received from ~p:~p value ~p~n", [Host, Port, Bin]),
       %% Allow live reloads
-      {ok, PacketHeader, PacketType, Packet} = quirrel_parse_frame:parse_headers(Bin, server),
+      {ok, PacketHeader, PacketType, Packet} = quirrel_parse_frame:parse_headers(Bin, client),
+      io:format("Headers: ~p", [PacketHeader]),
       io:format("Packet: ~p~n", [quirrel_parse_frame:parse_packet(PacketType, PacketHeader, Packet)]),
       ?MODULE:loop(Socket)
   end.
